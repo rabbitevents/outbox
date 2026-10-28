@@ -1,0 +1,59 @@
+{
+  "name": "rabbitevents/outbox",
+  "description": "Delivers RabbitEvents messages through a database outbox: written in the transaction of the event, retried until sent or expired, coalesced by object key",
+  "keywords": [
+    "laravel",
+    "rabbitmq",
+    "rabbitevents",
+    "outbox",
+    "transactional outbox"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Eugene Kirdzei",
+      "email": "masterjus@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "illuminate/console": "^11.0|^12.0|^13.0",
+    "illuminate/contracts": "^11.0|^12.0|^13.0",
+    "illuminate/database": "^11.0|^12.0|^13.0",
+    "illuminate/support": "^11.0|^12.0|^13.0",
+    "rabbitevents/foundation": "^10.1",
+    "rabbitevents/publisher": "^10.1"
+  },
+  "require-dev": {
+    "illuminate/config": "^11.0|^12.0|^13.0",
+    "illuminate/events": "^11.0|^12.0|^13.0",
+    "mockery/mockery": "^1.6.0",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^11.0|^12.0|^13.0",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "RabbitEvents\\Outbox\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "RabbitEvents\\Outbox\\Tests\\": "tests/"
+    },
+    "classmap": [
+      "tests/TestCase.php",
+      "tests/Unit/Fixtures.php"
+    ]
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "extra": {
+    "laravel": {
+      "providers": [
+        "RabbitEvents\\Outbox\\OutboxServiceProvider"
+      ]
+    }
+  }
+}

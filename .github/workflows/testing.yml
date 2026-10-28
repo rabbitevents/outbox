@@ -1,0 +1,78 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-versions: ['8.2', '8.3', '8.4']
+    name: PHPUnit on PHP ${{ matrix.php-versions }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: mbstring, sockets, pdo_sqlite, pcntl, posix
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      # The integration tests are skipped here: no database server.
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit --testsuite "RabbitEvents Outbox Test Suite"
+
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        driver: ['mysql', 'pgsql']
+    name: Integration on ${{ matrix.driver }} and RabbitMQ
+    services:
+      rabbitmq:
+        image: rabbitmq:3
+        ports: ['5672:5672']
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: outbox
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -psecret" --health-interval=5s --health-retries=20
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: outbox
+        ports: ['5432:5432']
+        options: --health-cmd="pg_isready -U postgres" --health-interval=5s --health-retries=20
+    env:
+      OUTBOX_DB_DRIVER: ${{ matrix.driver }}
+      OUTBOX_DB_HOST: 127.0.0.1
+      RABBITEVENTS_HOST: 127.0.0.1
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, sockets, pdo_mysql, pdo_pgsql, pcntl, posix
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Wait for RabbitMQ
+        run: for i in $(seq 1 30); do nc -z 127.0.0.1 5672 && break; sleep 2; done
+
+      - name: Run the integration tests
+        run: vendor/bin/phpunit tests/Integration
